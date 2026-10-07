@@ -9,7 +9,6 @@
 
 - ADINO, XYMER JOHN A.
 
-You are not using the existing PROJECTV3 project structure
 
 ## Included
 - Custom user authentication and roles
