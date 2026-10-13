@@ -140,7 +140,7 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def home(request):
-    return render(request, 'home.html')
+    return redirect('ofw:dashboard')
 
 
 @require_http_methods(['GET', 'POST'])

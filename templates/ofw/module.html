@@ -1,0 +1,330 @@
+{% extends "theme/base.html" %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none" aria-label="Page header">
+    <div class="container-xl">
+      <div class="row align-items-center">
+        <div class="col">
+          <div class="page-pretitle">Kabayani Track</div>
+          <div class="d-flex align-items-center gap-3 flex-wrap d-none d-md-flex">
+            <h2 class="page-title mb-0"><i class="{{ spec.icon }} me-2 text-primary"></i>{{ spec.title }}</h2>
+          </div>
+          <h2 class="page-title mb-0 d-md-none">{{ spec.title }}</h2>
+          {% if spec.subtitle %}<div class="text-muted mt-1">{{ spec.subtitle }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <br>
+
+  <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2 mb-1">
+    <form method="GET" class="w-100" style="max-width: 420px;">
+      <div class="input-group">
+        <span class="input-group-text"><i class="ti ti-search"></i></span>
+        <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search {{ spec.title|lower }}...">
+        {% if query %}
+        <a href="{% url 'ofw:module_list' module %}" class="btn btn-outline-secondary">Clear</a>
+        {% endif %}
+        <button type="submit" class="btn btn-primary">Search</button>
+      </div>
+    </form>
+
+    <button type="button" class="btn btn-primary mt-n4" data-bs-toggle="modal" data-bs-target="#moduleModal" data-mode="create">
+      <i class='fas fa-plus-circle me-2'></i> Add {{ spec.singular }}
+    </button>
+  </div>
+
+  <div class="toast-container position-fixed top-0 end-0 p-3" id="moduleToastContainer" aria-live="polite" aria-atomic="true">
+    {% for message in messages %}
+    <div class="toast bg-info-lt" role="status" aria-atomic="true" data-bs-delay="4000" style="--tblr-toast-color: #000;">
+      <div class="d-flex">
+        <div class="toast-body">{{ message }}</div>
+        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div id="moduleAlert" class="alert alert-danger d-none" role="alert"></div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        All {{ spec.title }}
+        {% if query %}
+        <span class="text-muted fw-normal">— search results for "{{ query }}"</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter table-hover card-table text-nowrap" id="moduleTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            {% for column in columns %}
+            <th>{{ column.label }}</th>
+            {% endfor %}
+            <th class="w-1">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="moduleTableBody">
+        {% for row in rows %}
+        <tr data-row-id="{{ row.id }}">
+            <td class="text-muted">{{ forloop.counter0|add:page_obj.start_index }}</td>
+            {% for cell in row.cells %}
+            <td>
+              {% if cell.badge %}
+              <span class="badge bg-{{ cell.tone }}-lt text-{{ cell.tone }}">{{ cell.text }}</span>
+              {% else %}
+              {{ cell.text }}
+              {% endif %}
+            </td>
+            {% endfor %}
+            <td>
+              <div class="d-flex gap-1">
+                <button type="button" class="btn btn-ghost-secondary btn-icon btn-sm" data-bs-toggle="modal" data-bs-target="#moduleModal" data-mode="edit" data-id="{{ row.id }}" title="Edit">
+                  <i class="fas fa-edit text-primary"></i>
+                </button>
+                <button type="button" class="btn btn-ghost-secondary btn-icon btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModuleModal" data-id="{{ row.id }}" data-name="{{ row.label }}" title="Delete">
+                  <i class="fas fa-trash-alt text-danger"></i>
+                </button>
+              </div>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="{{ columns|length|add:2 }}">
+                <div class="empty py-5">
+                    <div class="empty-icon">
+                        <i class="{{ spec.icon }} fa-2x text-muted"></i>
+                    </div>
+                    <p class="empty-title">No {{ spec.title|lower }} found</p>
+                    <p class="empty-subtitle">Try adjusting your search or add a new record.</p>
+                    <div class="empty-action">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#moduleModal" data-mode="create">
+                            <i class="fas fa-plus-circle me-2"></i> Add {{ spec.singular }}
+                        </button>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="card-footer d-flex align-items-center">
+      <p class="m-0 text-muted">
+        Showing <span class="fw-medium">{{ page_obj.start_index }}</span>
+        to <span class="fw-medium">{{ page_obj.end_index }}</span>
+        of <span class="fw-medium">{{ page_obj.paginator.count }}</span> records
+      </p>
+      <ul class="pagination m-0 ms-auto">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">
+            <i class="ti ti-chevron-left"></i> prev
+          </a>
+        </li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+          <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+        </li>
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">
+            next <i class="ti ti-chevron-right"></i>
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="modal modal-blur fade" id="moduleModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="moduleModalTitle">Add {{ spec.singular }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="moduleForm">
+        {% csrf_token %}
+        <input type="hidden" name="id" id="module_id">
+        <div class="modal-body">
+          <div id="moduleFormError" class="alert alert-danger d-none"></div>
+          <div class="row g-3">
+            {% for field in fields %}
+            {% if field.type == 'checkbox' %}
+            <div class="col-12 col-md-6">
+              <div class="form-check form-switch mt-4">
+                <input class="form-check-input" type="checkbox" name="{{ field.name }}" id="f_{{ field.name }}">
+                <label class="form-check-label" for="f_{{ field.name }}">{{ field.label }}</label>
+              </div>
+            </div>
+            {% else %}
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="f_{{ field.name }}">
+                {{ field.label }}{% if field.required %} <span class="text-danger">*</span>{% endif %}
+              </label>
+              {% if field.type == 'select' %}
+              <select name="{{ field.name }}" id="f_{{ field.name }}" class="form-select" {% if field.required %}required{% endif %}>
+                <option value="">---------</option>
+                {% for value, label in field.choices %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+              {% elif field.type == 'textarea' %}
+              <textarea name="{{ field.name }}" id="f_{{ field.name }}" rows="3" class="form-control" {% if field.required %}required{% endif %}></textarea>
+              {% else %}
+              <input type="{{ field.type }}" name="{{ field.name }}" id="f_{{ field.name }}" class="form-control" {% if field.required %}required{% endif %}>
+              {% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="moduleSubmitBtn">Save {{ spec.singular }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal modal-blur fade" id="deleteModuleModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Delete {{ spec.singular }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong id="deleteModuleName"></strong>?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteModuleBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  const modalEl = document.getElementById('moduleModal');
+  const deleteModalEl = document.getElementById('deleteModuleModal');
+  const form = document.getElementById('moduleForm');
+  const alertBox = document.getElementById('moduleAlert');
+  const title = document.getElementById('moduleModalTitle');
+  const submitBtn = document.getElementById('moduleSubmitBtn');
+  const deleteBtn = document.getElementById('confirmDeleteModuleBtn');
+  const deleteName = document.getElementById('deleteModuleName');
+  const CSRF = document.querySelector('#moduleForm [name=csrfmiddlewaretoken]').value;
+  const GET_URL = "{% url 'ofw:module_get_ajax' module 0 %}";
+  const SAVE_URL = "{% url 'ofw:module_save_ajax' module %}";
+  const DELETE_URL = "{% url 'ofw:module_delete_ajax' module 0 %}";
+
+  let currentId = null;
+
+  document.querySelectorAll('#moduleToastContainer .toast').forEach(function(toastEl) {
+    bootstrap.Toast.getOrCreateInstance(toastEl).show();
+  });
+
+  function resetForm() {
+    form.reset();
+    document.getElementById('module_id').value = '';
+    title.textContent = 'Add {{ spec.singular }}';
+    submitBtn.textContent = 'Save {{ spec.singular }}';
+    alertBox.classList.add('d-none');
+    alertBox.textContent = '';
+    currentId = null;
+  }
+
+  function fillForm(data) {
+    Array.from(form.elements).forEach(function(el) {
+      if (!el.name || el.name === 'csrfmiddlewaretoken' || el.name === 'id') return;
+      if (!(el.name in data)) return;
+      if (el.type === 'checkbox') {
+        el.checked = (data[el.name] === true || data[el.name] === 'True');
+      } else {
+        el.value = (data[el.name] === null || data[el.name] === undefined) ? '' : data[el.name];
+      }
+    });
+  }
+
+  modalEl.addEventListener('show.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    if (!button) { resetForm(); return; }
+    const mode = button.getAttribute('data-mode');
+    if (mode === 'edit') {
+      const id = button.getAttribute('data-id');
+      resetForm();
+      currentId = id;
+      document.getElementById('module_id').value = id;
+      title.textContent = 'Edit {{ spec.singular }}';
+      submitBtn.textContent = 'Update {{ spec.singular }}';
+      fetch(GET_URL.replace('/0/', '/' + id + '/'))
+        .then(r => r.json())
+        .then(fillForm)
+        .catch(() => {});
+    } else {
+      resetForm();
+    }
+  });
+
+  deleteModalEl.addEventListener('show.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    if (button) {
+      currentId = button.getAttribute('data-id');
+      deleteName.textContent = button.getAttribute('data-name');
+    }
+  });
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(form);
+    if (currentId) formData.set('id', currentId);
+
+    fetch(SAVE_URL, {
+      method: 'POST',
+      headers: {'X-CSRFToken': CSRF},
+      body: formData
+    })
+    .then(response => response.json().then(data => ({ok: response.ok, data})))
+    .then(({ok, data}) => {
+      if (!ok || data.error) {
+        alertBox.textContent = data.error || 'Something went wrong.';
+        alertBox.classList.remove('d-none');
+        return;
+      }
+      window.location.reload();
+    })
+    .catch(() => {
+      alertBox.textContent = 'Something went wrong.';
+      alertBox.classList.remove('d-none');
+    });
+  });
+
+  deleteBtn.addEventListener('click', function() {
+    if (!currentId) return;
+    fetch(DELETE_URL.replace('/0/', '/' + currentId + '/'), {
+      method: 'POST',
+      headers: {'X-CSRFToken': CSRF}
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'deleted') window.location.reload();
+    });
+  });
+})();
+</script>
+{% endblock %}

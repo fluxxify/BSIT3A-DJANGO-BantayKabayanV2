@@ -1,0 +1,194 @@
+{% extends "theme/base.html" %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none" aria-label="Page header">
+    <div class="container-xl">
+      <div class="row align-items-center">
+        <div class="col">
+          <div class="page-pretitle">Kabayani Track</div>
+          <div class="d-flex align-items-center gap-3 flex-wrap d-none d-md-flex">
+            <h2 class="page-title mb-0">OFW Monitoring &amp; Support Dashboard</h2>
+          </div>
+          <h2 class="page-title mb-0 d-md-none">Dashboard</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br>
+
+  <div class="row row-deck row-cards mb-3">
+    <div class="col-sm-6 col-lg-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="text-muted">Monitored OFWs</div>
+              <div class="h1 mb-0">{{ stats.ofw }}</div>
+            </div>
+            <span class="avatar bg-blue-lt text-blue"><i class="fas fa-passport fa-lg"></i></span>
+          </div>
+          <div class="text-muted mt-2"><span class="text-green">{{ stats.active }}</span> currently active</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="text-muted">Welfare Check-ins</div>
+              <div class="h1 mb-0">{{ stats.checkins }}</div>
+            </div>
+            <span class="avatar bg-green-lt text-green"><i class="fas fa-heart-pulse fa-lg"></i></span>
+          </div>
+          <div class="text-muted mt-2">Recorded wellbeing assessments</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="text-muted">Open Concerns</div>
+              <div class="h1 mb-0">{{ stats.open_concerns }}</div>
+            </div>
+            <span class="avatar bg-red-lt text-red"><i class="fas fa-triangle-exclamation fa-lg"></i></span>
+          </div>
+          <div class="text-muted mt-2">Reports needing attention</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="text-muted">Pending Referrals</div>
+              <div class="h1 mb-0">{{ stats.referrals }}</div>
+            </div>
+            <span class="avatar bg-orange-lt text-orange"><i class="fas fa-share-from-square fa-lg"></i></span>
+          </div>
+          <div class="text-muted mt-2">Awaiting provider response</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row row-deck row-cards">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-triangle-exclamation me-2 text-red"></i>Recent Concerns</h3>
+          <div class="card-actions">
+            <a href="{% url 'ofw:module_list' 'concern' %}" class="btn btn-sm btn-ghost-secondary">View all</a>
+          </div>
+        </div>
+        <div class="list-group list-group-flush">
+          {% for concern in recent_concerns %}
+          <div class="list-group-item">
+            <div class="d-flex align-items-center justify-content-between gap-2">
+              <div class="min-w-0">
+                <div class="fw-medium text-truncate">{{ concern.title }}</div>
+                <div class="text-muted small">{{ concern.ofw.full_name }} · {{ concern.get_category_display }}</div>
+              </div>
+              <div class="d-flex gap-1 flex-shrink-0">
+                <span class="badge bg-{{ concern.severity }}">{{ concern.get_severity_display }}</span>
+                <span class="badge bg-secondary-lt text-secondary">{{ concern.get_status_display }}</span>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="list-group-item text-muted">No concerns reported yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-heart-pulse me-2 text-green"></i>Recent Check-ins</h3>
+          <div class="card-actions">
+            <a href="{% url 'ofw:module_list' 'checkin' %}" class="btn btn-sm btn-ghost-secondary">View all</a>
+          </div>
+        </div>
+        <div class="list-group list-group-flush">
+          {% for checkin in recent_checkins %}
+          <div class="list-group-item">
+            <div class="d-flex align-items-center justify-content-between gap-2">
+              <div class="min-w-0">
+                <div class="fw-medium text-truncate">{{ checkin.ofw.full_name }}</div>
+                <div class="text-muted small">{{ checkin.check_in_date|date:"M d, Y" }} · {{ checkin.get_method_display }}</div>
+              </div>
+              <span class="badge bg-secondary-lt text-secondary">{{ checkin.get_wellbeing_display }}</span>
+            </div>
+          </div>
+          {% empty %}
+          <div class="list-group-item text-muted">No check-ins recorded yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-list-check me-2 text-blue"></i>Upcoming Follow-ups</h3>
+          <div class="card-actions">
+            <a href="{% url 'ofw:module_list' 'followup' %}" class="btn btn-sm btn-ghost-secondary">View all</a>
+          </div>
+        </div>
+        <div class="list-group list-group-flush">
+          {% for followup in upcoming_followups %}
+          <div class="list-group-item">
+            <div class="d-flex align-items-center justify-content-between gap-2">
+              <div class="min-w-0">
+                <div class="fw-medium text-truncate">{{ followup.ofw.full_name }}</div>
+                <div class="text-muted small">Scheduled {{ followup.scheduled_date|date:"M d, Y" }}</div>
+              </div>
+              <span class="badge bg-blue-lt text-blue">{{ followup.get_status_display }}</span>
+            </div>
+          </div>
+          {% empty %}
+          <div class="list-group-item text-muted">No upcoming follow-ups.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-chart-pie me-2 text-purple"></i>OFW Status Breakdown</h3>
+        </div>
+        <div class="list-group list-group-flush">
+          {% for row in status_counts %}
+          <div class="list-group-item d-flex align-items-center justify-content-between">
+            <span>{{ row.status }}</span>
+            <span class="badge bg-purple-lt text-purple">{{ row.total }}</span>
+          </div>
+          {% empty %}
+          <div class="list-group-item text-muted">No OFW records yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <br>
+  <div class="row row-deck row-cards">
+    {% for module in nav_modules %}
+    <div class="col-sm-6 col-lg-3">
+      <a href="{% url 'ofw:module_list' module.key %}" class="card card-link">
+        <div class="card-body">
+          <i class="{{ module.icon }} fa-lg text-primary"></i>
+          <div class="fw-medium mt-2">{{ module.title }}</div>
+          <div class="text-muted small">{{ module.subtitle }}</div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

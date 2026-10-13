@@ -3,11 +3,11 @@
     <div class="navbar-brand navbar-brand-autodark dh-brand">
       <a href="." class="d-flex align-items-center gap-2 text-decoration-none">
         <span class="dh-brand-mark">
-          <i class="fa-solid fa-shield-halved"></i>
+          <i class="fa-solid fa-shield-heart"></i>
         </span>
         <span class="lh-1">
-          <span class="dh-brand-name">Project<span class="text-warning">V3</span></span>
-          <span class="dh-brand-sub">Management System</span>
+          <span class="dh-brand-name">Kabayani<span class="text-warning">Track</span></span>
+          <span class="dh-brand-sub">OFW Monitoring &amp; Support</span>
         </span>
       </a>
     </div>
@@ -29,7 +29,7 @@
 
         <li class="nav-item">
           <span class="dh-nav-section">
-            Menu
+            Monitoring
           </span>
         </li>
         <li class="nav-item mb-1">
@@ -42,20 +42,70 @@
         </li>
 
         <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'module_list' and request.resolver_match.kwargs.module == 'ofw' %}active{% endif %}" href="{% url 'ofw:module_list' 'ofw' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-passport"></i>
+            </span>
+            <span class="nav-link-title">OFW Registry</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if 'checkin' in request.path %}active{% endif %}" href="{% url 'ofw:module_list' 'checkin' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-heart-pulse"></i>
+            </span>
+            <span class="nav-link-title">Welfare Check-ins</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if 'concern' in request.path %}active{% endif %}" href="{% url 'ofw:module_list' 'concern' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-triangle-exclamation"></i>
+            </span>
+            <span class="nav-link-title">Reported Concerns</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if 'referral' in request.path %}active{% endif %}" href="{% url 'ofw:module_list' 'referral' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-share-from-square"></i>
+            </span>
+            <span class="nav-link-title">Referrals</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if 'followup' in request.path %}active{% endif %}" href="{% url 'ofw:module_list' 'followup' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-list-check"></i>
+            </span>
+            <span class="nav-link-title">Follow-ups</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if 'support' in request.path %}active{% endif %}" href="{% url 'ofw:module_list' 'support' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-circle-info"></i>
+            </span>
+            <span class="nav-link-title">Support Information</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <span class="dh-nav-section">
+            Administration
+          </span>
+        </li>
+        <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.app_name == 'users' %}active{% endif %}" href="{% url 'users:user_list' %}">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
               <i class="nav-icon fas fa-users"></i>
             </span>
             <span class="nav-link-title">Users</span>
-          </a>
-        </li>
-
-        <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.app_name == 'info' %}active{% endif %}" href="{% url 'info:info_list' %}">
-            <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="nav-icon fas fa-address-card"></i>
-            </span>
-            <span class="nav-link-title">Info</span>
           </a>
         </li>
 

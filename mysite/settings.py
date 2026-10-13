@@ -40,7 +40,7 @@ INSTALLED_APPS = [
 
     'apps.core',
     'apps.users',
-    'apps.info',
+    'apps.ofw',
 ]
 
 MIDDLEWARE = [
@@ -84,6 +84,9 @@ DATABASES = {
         'PASSWORD': '',
         'HOST': 'localhost',
         'PORT': '3306',
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
     }
 }
 
