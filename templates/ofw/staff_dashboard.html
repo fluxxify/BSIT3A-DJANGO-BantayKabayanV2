@@ -1,0 +1,226 @@
+{% extends "theme/base.html" %}
+{% block extra_css %}
+<style>
+  .ph-staff { --ph-blue: #2563eb; --ph-slate: #64748b; }
+  .ph-staff .page-title { position: relative; padding-bottom: 8px; }
+  .ph-staff .page-title::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 72px;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--ph-blue) 0 50%, var(--ph-slate) 50% 100%);
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-xl ph-staff">
+  <div class="page-header d-print-none" aria-label="Page header">
+    <div class="container-xl">
+      <div class="row align-items-center">
+        <div class="col">
+          <div class="page-pretitle">Kabayani Track</div>
+          <div class="d-flex align-items-center gap-3 flex-wrap d-none d-md-flex">
+            <h2 class="page-title mb-0">Staff Dashboard</h2>
+          </div>
+          <h2 class="page-title mb-0 d-md-none">Staff Dashboard</h2>
+          <div class="text-muted mt-1">Monitor OFW complaints and escalate urgent cases to the administrator.</div>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+          <a href="{% url 'ofw:module_list' 'concern' %}" class="btn btn-primary">
+            <i class="fas fa-triangle-exclamation me-2"></i>Reported Concerns
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br>
+
+  <div class="row row-deck row-cards mb-3">
+    <div class="col-sm-6 col-lg-4">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="text-muted">Open Concerns</div>
+              <div class="h1 mb-0">{{ stats.open_concerns }}</div>
+            </div>
+            <span class="avatar bg-secondary-lt text-secondary"><i class="fas fa-triangle-exclamation fa-lg"></i></span>
+          </div>
+          <div class="text-muted mt-2">Needing attention</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="text-muted">Awaiting Admin</div>
+              <div class="h1 mb-0">{{ stats.pending_escalations }}</div>
+            </div>
+            <span class="avatar bg-yellow-lt text-yellow"><i class="fas fa-clock fa-lg"></i></span>
+          </div>
+          <div class="text-muted mt-2">Escalations not yet acknowledged</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="text-muted">Acknowledged</div>
+              <div class="h1 mb-0">{{ stats.acknowledged }}</div>
+            </div>
+            <span class="avatar bg-green-lt text-green"><i class="fas fa-circle-check fa-lg"></i></span>
+          </div>
+          <div class="text-muted mt-2">Seen by the administrator</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row row-deck row-cards">
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-triangle-exclamation me-2 text-secondary"></i>Open Complaints</h3>
+          <div class="card-actions">
+            <a href="{% url 'ofw:module_list' 'concern' %}" class="btn btn-sm btn-ghost-secondary">View all</a>
+          </div>
+        </div>
+        <div class="list-group list-group-flush">
+          {% for concern in open_concerns %}
+          <div class="list-group-item">
+            <div class="d-flex align-items-center justify-content-between gap-3">
+              <div class="min-w-0">
+                <div class="fw-medium text-truncate">{{ concern.title }}</div>
+                <div class="text-muted small">
+                  {{ concern.ofw.full_name }} · {{ concern.get_category_display }} · {{ concern.date_reported|date:"M d, Y" }}
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                {% if concern.severity == 'Critical' or concern.severity == 'High' %}
+                <span class="badge bg-red-lt text-red">{{ concern.get_severity_display }}</span>
+                {% elif concern.severity == 'Medium' %}
+                <span class="badge bg-yellow-lt text-yellow">{{ concern.get_severity_display }}</span>
+                {% else %}
+                <span class="badge bg-secondary-lt text-secondary">{{ concern.get_severity_display }}</span>
+                {% endif %}
+                {% if concern.id in notified_concern_ids %}
+                <span class="badge bg-green-lt text-green">Escalated</span>
+                {% else %}
+                <button type="button" class="btn btn-sm btn-outline-danger"
+                        data-bs-toggle="modal" data-bs-target="#escalateModal"
+                        data-concern-id="{{ concern.id }}"
+                        data-concern-title="{{ concern.title }}"
+                        data-concern-ofw="{{ concern.ofw.full_name }}">
+                  <i class="fas fa-bullhorn me-1"></i>Escalate to Admin
+                </button>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="list-group-item text-muted">No open complaints right now.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-paper-plane me-2 text-blue"></i>My Escalations</h3>
+        </div>
+        <div class="list-group list-group-flush">
+          {% for escalation in escalations %}
+          <div class="list-group-item">
+            <div class="d-flex align-items-center justify-content-between gap-2">
+              <div class="min-w-0">
+                <div class="fw-medium text-truncate">{{ escalation.concern.title }}</div>
+                <div class="text-muted small">
+                  {{ escalation.concern.ofw.full_name }} · {{ escalation.created_at|date:"M d, Y H:i" }}
+                  {% if escalation.priority == 'Urgent' %}<span class="badge bg-red-lt text-red ms-1">Urgent</span>{% endif %}
+                </div>
+                {% if escalation.response %}
+                <div class="text-muted small mt-1"><i class="fas fa-reply me-1"></i>{{ escalation.response }}</div>
+                {% endif %}
+              </div>
+              {% if escalation.status == 'Acknowledged' %}
+              <span class="badge bg-green-lt text-green flex-shrink-0">Acknowledged</span>
+              {% elif escalation.status == 'Resolved' %}
+              <span class="badge bg-cyan-lt text-cyan flex-shrink-0">Resolved</span>
+              {% else %}
+              <span class="badge bg-yellow-lt text-yellow flex-shrink-0">Awaiting Admin</span>
+              {% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <div class="list-group-item text-muted">You have not escalated any concern yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal modal-blur fade" id="escalateModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="escalateForm" method="post" action="{% url 'ofw:escalate_concern' 0 %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Escalate Concern to Administrator</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted">You are alerting the administrator about
+            <strong id="escalateConcernTitle"></strong> for
+            <strong id="escalateConcernOfw"></strong>.</p>
+          <div class="mb-3">
+            <label class="form-label" for="escalatePriority">Priority</label>
+            <select name="priority" id="escalatePriority" class="form-select">
+              <option value="Normal">Normal</option>
+              <option value="Urgent">Urgent</option>
+            </select>
+          </div>
+          <div class="mb-1">
+            <label class="form-label" for="escalateMessage">Message to admin</label>
+            <textarea name="message" id="escalateMessage" rows="3" class="form-control"
+                      placeholder="Summarize the situation and what the admin needs to do..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger"><i class="fas fa-bullhorn me-1"></i>Escalate</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  const modalEl = document.getElementById('escalateModal');
+  const form = document.getElementById('escalateForm');
+  const titleEl = document.getElementById('escalateConcernTitle');
+  const ofwEl = document.getElementById('escalateConcernOfw');
+  const URL_TEMPLATE = "{% url 'ofw:escalate_concern' 0 %}";
+
+  modalEl.addEventListener('show.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    if (!button) return;
+    const id = button.getAttribute('data-concern-id');
+    titleEl.textContent = button.getAttribute('data-concern-title');
+    ofwEl.textContent = button.getAttribute('data-concern-ofw');
+    form.action = URL_TEMPLATE.replace('/0/', '/' + id + '/');
+  });
+})();
+</script>
+{% endblock %}

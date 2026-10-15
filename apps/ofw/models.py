@@ -219,6 +219,59 @@ class Concern(models.Model):
         return self.title
 
 
+class ConcernEscalation(models.Model):
+    """An alert raised by staff to the administrator about an OFW concern.
+
+    This is the link between the staff dashboard and the administrator: when
+    staff escalates a complaint, an escalation record appears on the admin
+    dashboard until it is acknowledged.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = 'Pending', 'Pending'
+        ACKNOWLEDGED = 'Acknowledged', 'Acknowledged'
+        RESOLVED = 'Resolved', 'Resolved'
+
+    class Priority(models.TextChoices):
+        NORMAL = 'Normal', 'Normal'
+        URGENT = 'Urgent', 'Urgent'
+
+    concern = models.ForeignKey(
+        Concern,
+        related_name='escalations',
+        on_delete=models.CASCADE,
+    )
+    message = models.TextField(blank=True)
+    priority = models.CharField(max_length=20, choices=Priority.choices, default=Priority.NORMAL)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    escalated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='concern_escalations',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    acknowledged_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='acknowledged_escalations',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
+    response = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'tbl_ofw_concern_escalation'
+        ordering = ['-created_at', '-id']
+        verbose_name = 'concern escalation'
+        verbose_name_plural = 'concern escalations'
+
+    def __str__(self):
+        return f'{self.concern.title} -> admin ({self.status})'
+
+
 class SupportInfo(models.Model):
     """Reference information about available support services."""
 
@@ -250,6 +303,45 @@ class SupportInfo(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class EmergencyHotline(models.Model):
+    """An emergency contact number OFWs and families can reach for help."""
+
+    class Category(models.TextChoices):
+        EMERGENCY = 'Emergency', 'Emergency'
+        POLICE = 'Police', 'Police'
+        MEDICAL = 'Medical', 'Medical'
+        FIRE = 'Fire', 'Fire'
+        SEA_RESCUE = 'Sea Rescue', 'Sea Rescue'
+        EMBASSY = 'Embassy / Consulate', 'Embassy / Consulate'
+        POLO = 'Labor / POLO', 'Labor / POLO'
+        GOVERNMENT = 'Government Agency', 'Government Agency'
+        OTHER = 'Other', 'Other'
+
+    name = models.CharField(max_length=255)
+    category = models.CharField(max_length=30, choices=Category.choices, default=Category.EMERGENCY)
+    organization = models.CharField(max_length=255, blank=True)
+    hotline_number = models.CharField(max_length=50)
+    alternate_number = models.CharField(max_length=50, blank=True)
+    email = models.EmailField(max_length=255, blank=True)
+    website = models.URLField(max_length=255, blank=True)
+    coverage = models.CharField(max_length=150, blank=True, help_text='Country or area covered')
+    available_hours = models.CharField(max_length=100, blank=True, help_text='e.g. 24/7 or 8am-5pm')
+    is_24_7 = models.BooleanField(default=False, verbose_name='Available 24/7')
+    address = models.CharField(max_length=255, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'tbl_ofw_emergency_hotline'
+        ordering = ['-is_24_7', 'name']
+        verbose_name = 'emergency hotline'
+        verbose_name_plural = 'emergency hotlines'
+
+    def __str__(self):
+        return self.name
 
 
 class Referral(models.Model):

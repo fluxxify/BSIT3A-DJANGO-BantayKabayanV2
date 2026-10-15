@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     Concern,
+    ConcernEscalation,
     FollowUp,
     OFW,
     Referral,
@@ -44,6 +45,13 @@ class SupportInfoAdmin(admin.ModelAdmin):
     list_display = ('title', 'category', 'provider', 'contact')
     list_filter = ('category',)
     search_fields = ('title', 'provider', 'description')
+
+
+@admin.register(ConcernEscalation)
+class ConcernEscalationAdmin(admin.ModelAdmin):
+    list_display = ('concern', 'priority', 'status', 'escalated_by', 'acknowledged_by', 'created_at')
+    list_filter = ('status', 'priority')
+    search_fields = ('concern__title', 'concern__ofw__full_name', 'escalated_by__username')
 
 
 @admin.register(Referral)

@@ -82,6 +82,11 @@
             {% endfor %}
             <td>
               <div class="d-flex gap-1">
+                {% if row.call %}
+                <a href="tel:{{ row.call }}" class="btn btn-ghost-success btn-icon btn-sm" title="Call {{ row.label }}">
+                  <i class="fas fa-phone text-green"></i>
+                </a>
+                {% endif %}
                 <button type="button" class="btn btn-ghost-secondary btn-icon btn-sm" data-bs-toggle="modal" data-bs-target="#moduleModal" data-mode="edit" data-id="{{ row.id }}" title="Edit">
                   <i class="fas fa-edit text-primary"></i>
                 </button>

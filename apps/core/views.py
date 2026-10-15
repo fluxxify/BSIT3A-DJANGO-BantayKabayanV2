@@ -140,7 +140,9 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def home(request):
-    return redirect('ofw:dashboard')
+    if request.user.is_superuser:
+        return redirect('ofw:dashboard')
+    return redirect('ofw:staff_dashboard')
 
 
 @require_http_methods(['GET', 'POST'])

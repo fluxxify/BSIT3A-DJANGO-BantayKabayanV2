@@ -7,6 +7,7 @@ endpoints so every module behaves consistently.
 
 from .models import (
     Concern,
+    EmergencyHotline,
     FollowUp,
     OFW,
     Referral,
@@ -118,9 +119,27 @@ MODULES = {
         'table_fields': ['title', 'category', 'provider', 'contact', 'location'],
         'search_fields': ['title', 'provider', 'contact', 'description'],
     },
+    'hotline': {
+        'title': 'Emergency Hotlines',
+        'singular': 'Emergency Hotline',
+        'subtitle': 'Emergency and assistance contact numbers for OFWs',
+        'icon': 'fas fa-phone-volume',
+        'model': EmergencyHotline,
+        'form_fields': [
+            'name', 'category', 'organization', 'hotline_number',
+            'alternate_number', 'coverage', 'available_hours', 'is_24_7',
+            'email', 'website', 'address', 'notes',
+        ],
+        'auto_user_fields': [],
+        'table_fields': ['name', 'category', 'hotline_number', 'coverage', 'is_24_7'],
+        'search_fields': [
+            'name', 'organization', 'hotline_number', 'coverage', 'category',
+        ],
+        'call_field': 'hotline_number',
+    },
 }
 
-NAV_ORDER = ['ofw', 'checkin', 'concern', 'status', 'referral', 'followup', 'support']
+NAV_ORDER = ['ofw', 'checkin', 'concern', 'status', 'referral', 'followup', 'support', 'hotline']
 
 
 def get_module(key):

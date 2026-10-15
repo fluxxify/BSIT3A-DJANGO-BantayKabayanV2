@@ -1,6 +1,50 @@
 {% extends "theme/base.html" %}
+{% block extra_css %}
+<style>
+  .ph-dashboard { --ph-blue: #2563eb; --ph-slate: #64748b; }
+
+  .ph-dashboard .page-title { position: relative; padding-bottom: 8px; }
+  .ph-dashboard .page-title::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 72px;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--ph-blue) 0 50%, var(--ph-slate) 50% 100%);
+  }
+
+  .ph-dashboard .stat-card { position: relative; overflow: hidden; }
+  .ph-dashboard .stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--ph-blue);
+  }
+  .ph-dashboard .stat-card.ph-gold::before { background: var(--ph-slate); }
+  .ph-dashboard .stat-card.ph-red::before { background: var(--ph-slate); }
+
+  .ph-dashboard .ph-sun { color: var(--ph-blue); }
+
+  .ph-dashboard .module-card { position: relative; overflow: hidden; }
+  .ph-dashboard .module-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--ph-blue) 0 50%, var(--ph-slate) 50% 100%);
+  }
+  .ph-dashboard .module-card:hover { border-color: var(--ph-blue); }
+</style>
+{% endblock %}
 {% block content %}
-<div class="container-xl">
+<div class="container-xl ph-dashboard">
   <div class="page-header d-print-none" aria-label="Page header">
     <div class="container-xl">
       <div class="row align-items-center">
@@ -27,7 +71,7 @@
             </div>
             <span class="avatar bg-blue-lt text-blue"><i class="fas fa-passport fa-lg"></i></span>
           </div>
-          <div class="text-muted mt-2"><span class="text-green">{{ stats.active }}</span> currently active</div>
+          <div class="text-muted mt-2"><span class="text-blue">{{ stats.active }}</span> currently active</div>
         </div>
       </div>
     </div>
@@ -39,7 +83,7 @@
               <div class="text-muted">Welfare Check-ins</div>
               <div class="h1 mb-0">{{ stats.checkins }}</div>
             </div>
-            <span class="avatar bg-green-lt text-green"><i class="fas fa-heart-pulse fa-lg"></i></span>
+            <span class="avatar bg-blue-lt text-blue"><i class="fas fa-heart-pulse fa-lg"></i></span>
           </div>
           <div class="text-muted mt-2">Recorded wellbeing assessments</div>
         </div>
@@ -53,7 +97,7 @@
               <div class="text-muted">Open Concerns</div>
               <div class="h1 mb-0">{{ stats.open_concerns }}</div>
             </div>
-            <span class="avatar bg-red-lt text-red"><i class="fas fa-triangle-exclamation fa-lg"></i></span>
+            <span class="avatar bg-secondary-lt text-secondary"><i class="fas fa-triangle-exclamation fa-lg"></i></span>
           </div>
           <div class="text-muted mt-2">Reports needing attention</div>
         </div>
@@ -67,7 +111,7 @@
               <div class="text-muted">Pending Referrals</div>
               <div class="h1 mb-0">{{ stats.referrals }}</div>
             </div>
-            <span class="avatar bg-orange-lt text-orange"><i class="fas fa-share-from-square fa-lg"></i></span>
+            <span class="avatar bg-secondary-lt text-secondary"><i class="fas fa-share-from-square fa-lg"></i></span>
           </div>
           <div class="text-muted mt-2">Awaiting provider response</div>
         </div>
@@ -75,11 +119,57 @@
     </div>
   </div>
 
+  {% if user.is_superuser and escalation_count %}
+  <div class="row row-cards mb-3">
+    <div class="col-12">
+      <div class="card border-danger">
+        <div class="card-header">
+          <h3 class="card-title text-danger"><i class="fas fa-bell me-2"></i>Staff Escalations from the Field</h3>
+          <div class="card-actions">
+            <span class="badge bg-danger">{{ escalation_count }} needing attention</span>
+          </div>
+        </div>
+        <div class="list-group list-group-flush">
+          {% for escalation in escalations %}
+          <div class="list-group-item">
+            <div class="d-flex align-items-start justify-content-between gap-3">
+              <div class="min-w-0">
+                <div class="fw-medium">
+                  {{ escalation.concern.title }}
+                  {% if escalation.priority == 'Urgent' %}<span class="badge bg-red-lt text-red ms-1">Urgent</span>{% endif %}
+                  {% if escalation.status == 'Acknowledged' %}<span class="badge bg-green-lt text-green ms-1">Acknowledged</span>{% endif %}
+                </div>
+                <div class="text-muted small">
+                  {{ escalation.concern.ofw.full_name }} · {{ escalation.concern.get_category_display }} ·
+                  escalated by {{ escalation.escalated_by.username|default:"staff" }} {{ escalation.created_at|timesince }} ago
+                </div>
+                {% if escalation.message %}
+                <div class="text-muted small mt-1"><i class="fas fa-quote-left me-1"></i>{{ escalation.message }}</div>
+                {% endif %}
+              </div>
+              {% if escalation.status == 'Pending' %}
+              <form method="post" action="{% url 'ofw:acknowledge_escalation' escalation.pk %}" class="flex-shrink-0">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'ofw:dashboard' %}">
+                <button type="submit" class="btn btn-sm btn-success">
+                  <i class="fas fa-check me-1"></i>Acknowledge
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <div class="row row-deck row-cards">
     <div class="col-lg-6">
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title"><i class="fas fa-triangle-exclamation me-2 text-red"></i>Recent Concerns</h3>
+          <h3 class="card-title"><i class="fas fa-triangle-exclamation me-2 text-secondary"></i>Recent Concerns</h3>
           <div class="card-actions">
             <a href="{% url 'ofw:module_list' 'concern' %}" class="btn btn-sm btn-ghost-secondary">View all</a>
           </div>
@@ -108,7 +198,7 @@
     <div class="col-lg-6">
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title"><i class="fas fa-heart-pulse me-2 text-green"></i>Recent Check-ins</h3>
+          <h3 class="card-title"><i class="fas fa-heart-pulse me-2 text-blue"></i>Recent Check-ins</h3>
           <div class="card-actions">
             <a href="{% url 'ofw:module_list' 'checkin' %}" class="btn btn-sm btn-ghost-secondary">View all</a>
           </div>
@@ -160,17 +250,53 @@
     <div class="col-lg-6">
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title"><i class="fas fa-chart-pie me-2 text-purple"></i>OFW Status Breakdown</h3>
+          <h3 class="card-title"><i class="fas fa-chart-pie me-2 text-blue"></i>OFW Status Breakdown</h3>
         </div>
         <div class="list-group list-group-flush">
           {% for row in status_counts %}
           <div class="list-group-item d-flex align-items-center justify-content-between">
             <span>{{ row.status }}</span>
-            <span class="badge bg-purple-lt text-purple">{{ row.total }}</span>
+            <span class="badge bg-blue-lt text-blue">{{ row.total }}</span>
           </div>
           {% empty %}
           <div class="list-group-item text-muted">No OFW records yet.</div>
           {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <br>
+  <div class="row row-cards">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-phone-volume me-2 text-red"></i>Emergency Hotlines</h3>
+          <div class="card-actions">
+            <a href="{% url 'ofw:module_list' 'hotline' %}" class="btn btn-sm btn-ghost-secondary">View all</a>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            {% for hotline in emergency_hotlines %}
+            <div class="col-12 col-md-6 col-xl-4">
+              <div class="d-flex align-items-center justify-content-between gap-2 border rounded p-3 h-100">
+                <div class="min-w-0">
+                  <div class="fw-medium text-truncate">{{ hotline.name }}</div>
+                  <div class="text-muted small text-truncate">
+                    {{ hotline.get_category_display }}{% if hotline.coverage %} · {{ hotline.coverage }}{% endif %}
+                    {% if hotline.is_24_7 %}<span class="badge bg-green-lt text-green ms-1">24/7</span>{% endif %}
+                  </div>
+                </div>
+                <a href="tel:{{ hotline.hotline_number|cut:" "|cut:"-"|cut:"("|cut:")" }}" class="btn btn-sm btn-primary flex-shrink-0" aria-label="Call {{ hotline.name }}">
+                  <i class="fas fa-phone me-1"></i>{{ hotline.hotline_number }}
+                </a>
+              </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-muted">No emergency hotlines recorded yet.</div>
+            {% endfor %}
+          </div>
         </div>
       </div>
     </div>

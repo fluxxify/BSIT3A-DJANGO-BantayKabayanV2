@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from apps.ofw.models import Concern, OFW
+from apps.ofw.models import Concern, ConcernEscalation, OFW
 
 
 class OFWModelTests(TestCase):
@@ -60,3 +60,69 @@ class ModuleViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         concern = Concern.objects.get(title='Unpaid salary')
         self.assertEqual(concern.reported_by, self.user)
+
+
+class EscalationTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        self.staff = User.objects.create_user(username='staff', password='secret1234')
+        self.admin = User.objects.create_superuser(username='boss', password='secret1234')
+        self.ofw = OFW.objects.create(full_name='Juan Dela Cruz', destination_country='Qatar')
+
+    def _concern(self):
+        return Concern.objects.create(
+            ofw=self.ofw, title='Unpaid salary', reported_by=self.staff
+        )
+
+    def test_staff_dashboard_requires_login(self):
+        response = self.client.get(reverse('ofw:staff_dashboard'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_staff_dashboard_renders(self):
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse('ofw:staff_dashboard'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_staff_cannot_open_admin_dashboard(self):
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse('ofw:dashboard'))
+        self.assertRedirects(response, reverse('ofw:staff_dashboard'))
+
+    def test_admin_can_open_admin_dashboard(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('ofw:dashboard'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_staff_can_escalate_concern_to_admin(self):
+        concern = self._concern()
+        self.client.force_login(self.staff)
+        response = self.client.post(
+            reverse('ofw:escalate_concern', args=[concern.pk]),
+            {'message': 'Needs admin attention', 'priority': 'Urgent'},
+        )
+        self.assertRedirects(response, reverse('ofw:staff_dashboard'))
+        escalation = ConcernEscalation.objects.get(concern=concern)
+        self.assertEqual(escalation.escalated_by, self.staff)
+        self.assertEqual(escalation.status, ConcernEscalation.Status.PENDING)
+        concern.refresh_from_db()
+        self.assertEqual(concern.status, Concern.Status.IN_PROGRESS)
+
+    def test_admin_sees_and_acknowledges_escalation(self):
+        concern = self._concern()
+        escalation = ConcernEscalation.objects.create(
+            concern=concern, escalated_by=self.staff, priority='Urgent'
+        )
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('ofw:dashboard'))
+        self.assertContains(response, 'Staff Escalations')
+
+        response = self.client.post(
+            reverse('ofw:acknowledge_escalation', args=[escalation.pk]),
+            {'response': 'On it.', 'next': reverse('ofw:dashboard')},
+        )
+        self.assertRedirects(response, reverse('ofw:dashboard'))
+        escalation.refresh_from_db()
+        self.assertEqual(escalation.status, ConcernEscalation.Status.ACKNOWLEDGED)
+        self.assertEqual(escalation.acknowledged_by, self.admin)

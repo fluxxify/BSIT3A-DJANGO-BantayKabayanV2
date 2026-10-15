@@ -6,7 +6,7 @@
           <i class="fa-solid fa-shield-heart"></i>
         </span>
         <span class="lh-1">
-          <span class="dh-brand-name">Kabayani<span class="text-warning">Track</span></span>
+          <span class="dh-brand-name">Kabayani<span class="dh-brand-accent">Track</span></span>
           <span class="dh-brand-sub">OFW Monitoring &amp; Support</span>
         </span>
       </a>
@@ -32,12 +32,32 @@
             Monitoring
           </span>
         </li>
+        {% if user.is_superuser %}
         <li class="nav-item mb-1">
           <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
               <i class="fa fa-dashboard"></i>
             </span>
             <span class="nav-link-title">Dashboard</span>
+          </a>
+        </li>
+        {% else %}
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.url_name == 'staff_dashboard' %}active{% endif %}" href="{% url 'ofw:staff_dashboard' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="fas fa-headset"></i>
+            </span>
+            <span class="nav-link-title">Staff Dashboard</span>
+          </a>
+        </li>
+        {% endif %}
+
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.url_name == 'deployment_map' %}active{% endif %}" href="{% url 'ofw:deployment_map' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="fas fa-earth-asia"></i>
+            </span>
+            <span class="nav-link-title">Deployment Map</span>
           </a>
         </li>
 
@@ -96,6 +116,16 @@
         </li>
 
         <li class="nav-item">
+          <a class="nav-link {% if 'hotline' in request.path %}active{% endif %}" href="{% url 'ofw:module_list' 'hotline' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-phone-volume"></i>
+            </span>
+            <span class="nav-link-title">Emergency Hotlines</span>
+          </a>
+        </li>
+
+        {% if user.is_superuser %}
+        <li class="nav-item">
           <span class="dh-nav-section">
             Administration
           </span>
@@ -108,6 +138,7 @@
             <span class="nav-link-title">Users</span>
           </a>
         </li>
+        {% endif %}
 
         {% if user.is_authenticated %}
         <li class="nav-item d-lg-none">
@@ -122,12 +153,16 @@
 
         <li class="nav-item mt-auto dh-nav-sidebar-footer">
           <div class="dh-user-card">
+            {% if user.is_superuser %}
             <a href="{% url 'users:user_list' %}" class="d-flex align-items-center gap-2 text-decoration-none text-white min-w-0 w-100">
+            {% else %}
+            <a href="{% url 'ofw:staff_dashboard' %}" class="d-flex align-items-center gap-2 text-decoration-none text-white min-w-0 w-100">
+            {% endif %}
               <span class="dh-avatar">{{ user.username|first|upper }}</span>
               <span class="min-w-0 flex-grow-1">
                 <span class="dh-user-name">{{ user.username }}</span>
                 <span class="dh-user-role">
-                  {% if user.is_superuser %}Administrator{% elif user.is_authenticated %}Instructor{% endif %}
+                  {% if user.is_superuser %}Administrator{% elif user.is_authenticated %}Staff{% endif %}
                 </span>
               </span>
             </a>

@@ -51,6 +51,14 @@ TONES = {
     'Overdue': 'red',
     'Yes': 'orange',
     'No': 'secondary',
+    'Emergency': 'red',
+    'Police': 'blue',
+    'Medical': 'green',
+    'Fire': 'orange',
+    'Sea Rescue': 'cyan',
+    'Embassy / Consulate': 'blue',
+    'Labor / POLO': 'cyan',
+    'Government Agency': 'secondary',
 }
 
 
@@ -171,12 +179,24 @@ def _cell(obj, field_name):
     return {'text': str(value), 'badge': False}
 
 
+def _dial_href(value):
+    """Turn a stored phone number into a tel: URI digits-only target."""
+    if not value:
+        return ''
+    return ''.join(ch for ch in str(value) if ch.isdigit() or ch == '+')
+
+
 def _row(obj, spec):
-    return {
+    row = {
         'id': obj.pk,
         'label': str(obj),
         'cells': [_cell(obj, name) for name in spec['table_fields']],
+        'call': '',
     }
+    call_field = spec.get('call_field')
+    if call_field:
+        row['call'] = _dial_href(getattr(obj, call_field, ''))
+    return row
 
 
 def _first_error(form):
